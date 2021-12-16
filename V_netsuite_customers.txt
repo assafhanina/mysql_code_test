@@ -1,0 +1,57 @@
+create or replace view v_netsuite_customers as;
+select
+	trader.id as customer_id,
+	country.name as country_name,
+	case when trader.brand_id = 23 then 'Seychelles' else trader_regulation.name end as licence_regulation,
+	case when trader.brand_id = 5 then 'Finteractive' else 'Gstaad' end as broker_name,
+	currency.name as account_currency,
+	brand.name as brand,
+	COALESCE(depositors.first_deposit_date,has_tr.first_transaction_date) as first_deposit_date,
+	'Client' as customer_type,
+	null as company_name,
+	trader.first_name,
+	trader.last_name,
+	case 
+		when trader.brand_id = 36 then 'exempt'
+		when trader.brand_id = 5 and trader.country_id in (225,249) then 0 
+		else 'exempt'
+	end as vat 
+from
+	trader
+left join trader_account on
+	trader.id = trader_account.trader_id
+left join currency on
+	currency.id = trader_account.currency_id
+left join country on
+	country.id = trader.country_id
+left join trader_regulation on
+	trader_regulation.id = trader.regulation_id
+left join brand on
+	brand.id = trader.brand_id
+left join #to get only depositors 
+(
+	select
+		trader_account_id,
+		min( created_at ) as first_deposit_date
+	from
+		transaction_record
+	where 1 = 1
+		and origin_type = 1
+	group by 1
+) depositors on depositors.trader_account_id = trader_account.id
+inner join #to get only those who has transactions
+(
+	select
+		trader_account_id,
+		min(created_at) as first_transaction_date
+	from
+		transaction_record
+	where 1 = 1
+	group by 1
+) has_tr on has_tr.trader_account_id = trader_account.id
+where 1 = 1
+and trader.is_test = 0
+and trader.brand_id not in (23)
+and COALESCE(depositors.first_deposit_date,has_tr.first_transaction_date) >= date('2022-01-01') 
+
+
