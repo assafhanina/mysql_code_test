@@ -15,7 +15,9 @@ select
 		when trader.brand_id = 36 then 'exempt'
 		when trader.brand_id = 5 and trader.country_id in (225,249) then 0 
 		else 'exempt'
-	end as vat 
+	end as vat,
+	trader.country_id,
+	trader.address
 from
 	trader
 left join trader_account on
