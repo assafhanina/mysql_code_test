@@ -1,6 +1,7 @@
 create or replace view v_netsuite_customers as;
 select
 	trader.id as customer_id,
+	trader.first_name,
 	country.name as country_name,
 	case when trader.brand_id = 23 then 'Seychelles' else trader_regulation.name end as licence_regulation,
 	case when trader.brand_id = 5 then 'Finteractive' else 'Gstaad' end as broker_name,
